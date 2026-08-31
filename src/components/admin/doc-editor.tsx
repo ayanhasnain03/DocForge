@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { ConfirmActionDialog } from '@/components/admin/confirm-action-dialog';
 import { useToast } from '@/components/admin/toast';
 import { NotionEditor } from '@/components/admin/notion-editor/notion-editor';
 import { readApiError } from '@/lib/admin/api-client';
+import { encodeContentPath } from '@/lib/admin/content-path';
 import { savedMessage } from '@/lib/admin/save-messages';
 import type { ContentSource } from '@/lib/admin/content-types';
 import { validateDocPayload } from '@/lib/admin/validate';
@@ -13,6 +15,8 @@ type DocEditorProps = {
   onSaved: () => void;
   onDeleted: () => void;
 };
+
+type PendingConfirm = 'save' | 'delete' | null;
 
 export function DocEditor({ path, onSaved, onDeleted }: DocEditorProps) {
   const { showSuccess, showError } = useToast();
@@ -25,6 +29,7 @@ export function DocEditor({ path, onSaved, onDeleted }: DocEditorProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [fieldError, setFieldError] = useState('');
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm>(null);
   const bodyRef = useRef('');
 
   bodyRef.current = body;
@@ -33,7 +38,7 @@ export function DocEditor({ path, onSaved, onDeleted }: DocEditorProps) {
     async function load() {
       setLoading(true);
       setFieldError('');
-      const response = await fetch(`/api/admin/content/${path.split('/').map(encodeURIComponent).join('/')}`);
+      const response = await fetch(`/api/admin/content/${encodeContentPath(path)}`);
       if (!response.ok) {
         const message = await readApiError(response, 'Could not load page');
         setFieldError(message);
@@ -62,13 +67,10 @@ export function DocEditor({ path, onSaved, onDeleted }: DocEditorProps) {
     setShowRaw(false);
   }
 
-  async function save() {
+  function requestSave() {
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 0);
-    });
 
     const validation = validateDocPayload(
       { title, description },
@@ -80,19 +82,20 @@ export function DocEditor({ path, onSaved, onDeleted }: DocEditorProps) {
       return;
     }
 
+    setPendingConfirm('save');
+  }
+
+  async function save() {
     setSaving(true);
     setFieldError('');
-    const response = await fetch(
-      `/api/admin/content/${path.split('/').map(encodeURIComponent).join('/')}`,
-      {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          frontmatter: { title: title.trim(), description: description.trim() || undefined },
-          body: bodyRef.current,
-        }),
-      },
-    );
+    const response = await fetch(`/api/admin/content/${encodeContentPath(path)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        frontmatter: { title: title.trim(), description: description.trim() || undefined },
+        body: bodyRef.current,
+      }),
+    });
     setSaving(false);
     if (!response.ok) {
       const message = await readApiError(response, 'Save failed');
@@ -101,16 +104,17 @@ export function DocEditor({ path, onSaved, onDeleted }: DocEditorProps) {
       return;
     }
     const data = (await response.json()) as { source?: ContentSource };
+    setPendingConfirm(null);
     showSuccess(savedMessage(data.source, 'Page saved'));
     onSaved();
   }
 
   async function remove() {
-    if (!window.confirm(`Delete ${path}?`)) return;
-    const response = await fetch(
-      `/api/admin/content/${path.split('/').map(encodeURIComponent).join('/')}`,
-      { method: 'DELETE' },
-    );
+    setSaving(true);
+    const response = await fetch(`/api/admin/content/${encodeContentPath(path)}`, {
+      method: 'DELETE',
+    });
+    setSaving(false);
     if (!response.ok) {
       const message = await readApiError(response, 'Delete failed');
       setFieldError(message);
@@ -118,6 +122,7 @@ export function DocEditor({ path, onSaved, onDeleted }: DocEditorProps) {
       return;
     }
     const data = (await response.json()) as { source?: ContentSource };
+    setPendingConfirm(null);
     showSuccess(savedMessage(data.source, 'Page deleted'));
     onDeleted();
   }
@@ -127,6 +132,7 @@ export function DocEditor({ path, onSaved, onDeleted }: DocEditorProps) {
   }
 
   const previewUrl = `/${path.replace(/\.mdx$/, '').replace(/\/index$/, '').replace(/^index$/, '')}`;
+  const displayTitle = title.trim() || path;
 
   return (
     <div className="admin-editor">
@@ -159,7 +165,8 @@ export function DocEditor({ path, onSaved, onDeleted }: DocEditorProps) {
           <button
             type="button"
             className="admin-btn admin-btn-danger"
-            onClick={() => void remove()}
+            disabled={saving}
+            onClick={() => setPendingConfirm('delete')}
           >
             Delete
           </button>
@@ -167,9 +174,9 @@ export function DocEditor({ path, onSaved, onDeleted }: DocEditorProps) {
             type="button"
             className="admin-btn admin-btn-primary"
             disabled={saving}
-            onClick={() => void save()}
+            onClick={requestSave}
           >
-            {saving ? 'Saving…' : 'Save'}
+            Save
           </button>
         </div>
       </div>
@@ -213,6 +220,27 @@ export function DocEditor({ path, onSaved, onDeleted }: DocEditorProps) {
           onChange={setBody}
         />
       )}
+
+      <ConfirmActionDialog
+        open={pendingConfirm === 'save'}
+        title="Save page?"
+        description={`Save changes to "${displayTitle}" at ${path}? This updates the live docs content.`}
+        confirmLabel="Save"
+        loading={saving}
+        onClose={() => setPendingConfirm(null)}
+        onConfirm={() => void save()}
+      />
+
+      <ConfirmActionDialog
+        open={pendingConfirm === 'delete'}
+        title="Delete page?"
+        description={`Delete "${displayTitle}" (${path}) permanently. This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        loading={saving}
+        onClose={() => setPendingConfirm(null)}
+        onConfirm={() => void remove()}
+      />
     </div>
   );
 }

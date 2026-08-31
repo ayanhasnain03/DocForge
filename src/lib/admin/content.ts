@@ -13,6 +13,7 @@ import {
   serializeDoc,
   serializeMeta,
 } from '@/lib/admin/content-format';
+import { slugifyTitle } from '@/lib/admin/content-types';
 
 export type {
   ContentNode,
@@ -83,6 +84,85 @@ export async function writeDoc(
 export async function deleteDoc(relativePath: string): Promise<void> {
   const full = resolveSafePath(relativePath);
   await fs.unlink(full);
+}
+
+export async function deleteFolder(relativePath: string): Promise<void> {
+  const full = resolveSafePath(relativePath);
+  await fs.rm(full, { recursive: true, force: true });
+}
+
+export async function renameFile(
+  relativePath: string,
+  newName: string,
+): Promise<{ path: string }> {
+  if (relativePath.endsWith('meta.json')) {
+    throw new Error('Navigation files cannot be renamed.');
+  }
+
+  const slug = slugifyTitle(newName);
+  if (!slug) {
+    throw new Error('Name is required.');
+  }
+
+  const dir = path.dirname(relativePath);
+  const extension = relativePath.endsWith('.mdx') ? '.mdx' : '';
+  if (!extension) {
+    throw new Error('Only MDX files can be renamed.');
+  }
+
+  const newRelativePath =
+    dir === '.' ? `${slug}${extension}` : `${dir}/${slug}${extension}`;
+
+  if (newRelativePath === relativePath) {
+    return { path: relativePath };
+  }
+
+  const oldFull = resolveSafePath(relativePath);
+  const newFull = resolveSafePath(newRelativePath);
+
+  if (await pathExists(newFull)) {
+    throw new Error('A file with that name already exists.');
+  }
+
+  await fs.rename(oldFull, newFull);
+  return { path: normalizeRelativePath(newRelativePath) };
+}
+
+export async function renameFolder(
+  relativePath: string,
+  newName: string,
+): Promise<{ path: string }> {
+  const slug = slugifyTitle(newName);
+  if (!slug) {
+    throw new Error('Name is required.');
+  }
+
+  const parent = path.dirname(relativePath);
+  const newRelativePath =
+    parent === '.' ? slug : `${parent}/${slug}`;
+
+  if (newRelativePath === relativePath) {
+    return { path: relativePath };
+  }
+
+  const oldFull = resolveSafePath(relativePath);
+  const newFull = resolveSafePath(newRelativePath);
+
+  if (await pathExists(newFull)) {
+    throw new Error('A folder with that name already exists.');
+  }
+
+  await fs.rename(oldFull, newFull);
+  return { path: normalizeRelativePath(newRelativePath) };
+}
+
+async function pathExists(fullPath: string): Promise<boolean> {
+  try {
+    await fs.access(fullPath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function readMeta(relativePath: string): Promise<MetaFile> {

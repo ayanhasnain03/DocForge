@@ -95,6 +95,24 @@ export function validateCreatePayload(
   return { ok: true };
 }
 
+export function validateRenamePayload(name: string | undefined): ValidationResult {
+  const trimmed = name?.trim() ?? '';
+  if (!trimmed) {
+    return { ok: false, error: 'Name is required.' };
+  }
+
+  if (trimmed.length > 120) {
+    return { ok: false, error: 'Name must be 120 characters or fewer.' };
+  }
+
+  return { ok: true };
+}
+
+export function assertRenamePayload(name: string | undefined): void {
+  const result = validateRenamePayload(name);
+  if (!result.ok) throw new ValidationError(result.error);
+}
+
 export function assertCreatePayload(kind: string | undefined, title: string | undefined): void {
   const result = validateCreatePayload(kind, title);
   if (!result.ok) throw new ValidationError(result.error);

@@ -18,8 +18,10 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useState } from 'react';
+import { ConfirmActionDialog } from '@/components/admin/confirm-action-dialog';
 import { useToast } from '@/components/admin/toast';
 import { readApiError } from '@/lib/admin/api-client';
+import { encodeContentPath } from '@/lib/admin/content-path';
 import { savedMessage } from '@/lib/admin/save-messages';
 import type { ContentSource } from '@/lib/admin/content-types';
 import { validateMetaPayload } from '@/lib/admin/validate';
@@ -80,6 +82,7 @@ export function NavEditor({ path, onSaved }: NavEditorProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [fieldError, setFieldError] = useState('');
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -93,7 +96,7 @@ export function NavEditor({ path, onSaved }: NavEditorProps) {
     async function load() {
       setLoading(true);
       const response = await fetch(
-        `/api/admin/content/${path.split('/').map(encodeURIComponent).join('/')}`,
+        `/api/admin/content/${encodeContentPath(path)}`,
       );
       if (!response.ok) {
         const message = await readApiError(response, 'Could not load navigation');
@@ -120,24 +123,24 @@ export function NavEditor({ path, onSaved }: NavEditorProps) {
     }));
   }
 
-  async function save() {
+  function requestSave() {
     const validation = validateMetaPayload(data as Record<string, unknown>);
     if (!validation.ok) {
       setFieldError(validation.error);
       showError(validation.error);
       return;
     }
+    setConfirmSaveOpen(true);
+  }
 
+  async function save() {
     setSaving(true);
     setFieldError('');
-    const response = await fetch(
-      `/api/admin/content/${path.split('/').map(encodeURIComponent).join('/')}`,
-      {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data }),
-      },
-    );
+    const response = await fetch(`/api/admin/content/${encodeContentPath(path)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data }),
+    });
     setSaving(false);
     if (!response.ok) {
       const message = await readApiError(response, 'Save failed');
@@ -146,6 +149,7 @@ export function NavEditor({ path, onSaved }: NavEditorProps) {
       return;
     }
     const result = (await response.json()) as { source?: ContentSource };
+    setConfirmSaveOpen(false);
     showSuccess(savedMessage(result.source, 'Navigation saved'));
     onSaved();
   }
@@ -162,9 +166,9 @@ export function NavEditor({ path, onSaved }: NavEditorProps) {
           type="button"
           className="admin-btn admin-btn-primary"
           disabled={saving}
-          onClick={() => void save()}
+          onClick={requestSave}
         >
-          {saving ? 'Saving…' : 'Save navigation'}
+          Save navigation
         </button>
       </div>
 
@@ -269,6 +273,16 @@ export function NavEditor({ path, onSaved }: NavEditorProps) {
           + Page entry
         </button>
       </div>
+
+      <ConfirmActionDialog
+        open={confirmSaveOpen}
+        title="Save navigation?"
+        description={`Save sidebar settings for "${data.title?.trim() || path}"? This updates page order and section options.`}
+        confirmLabel="Save"
+        loading={saving}
+        onClose={() => setConfirmSaveOpen(false)}
+        onConfirm={() => void save()}
+      />
     </div>
   );
 }

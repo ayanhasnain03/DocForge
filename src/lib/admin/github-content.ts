@@ -1,4 +1,5 @@
 import type { ContentNode, DocFile, DocFrontmatter, MetaFile } from '@/lib/admin/content-types';
+import { slugifyTitle } from '@/lib/admin/content-types';
 import {
   normalizeRelativePath,
   parseDoc,
@@ -310,6 +311,134 @@ export async function writeDoc(
 export async function deleteDoc(relativePath: string): Promise<void> {
   const config = getConfig();
   await deleteRepoFile(config, relativePath, commitMessage('delete', relativePath));
+}
+
+export async function deleteFolder(relativePath: string): Promise<void> {
+  const config = getConfig();
+  const prefix = `${relativePath.replace(/\/$/, '')}/`;
+  const paths = await listRelativeContentPaths(config);
+  const targets = paths.filter(
+    (entry) => entry === relativePath.replace(/\/$/, '') || entry.startsWith(prefix),
+  );
+
+  if (targets.length === 0) {
+    throw new Error('Folder not found');
+  }
+
+  for (const target of [...targets].sort((a, b) => b.length - a.length)) {
+    await deleteRepoFile(config, target, commitMessage('delete', target));
+  }
+}
+
+export async function renameFile(
+  relativePath: string,
+  newName: string,
+): Promise<{ path: string }> {
+  if (relativePath.endsWith('meta.json')) {
+    throw new Error('Navigation files cannot be renamed.');
+  }
+
+  const slug = slugifyTitle(newName);
+  if (!slug) {
+    throw new Error('Name is required.');
+  }
+
+  const dir = relativePath.includes('/')
+    ? relativePath.slice(0, relativePath.lastIndexOf('/'))
+    : '';
+  const extension = relativePath.endsWith('.mdx') ? '.mdx' : '';
+  if (!extension) {
+    throw new Error('Only MDX files can be renamed.');
+  }
+
+  const newRelativePath = dir ? `${dir}/${slug}${extension}` : `${slug}${extension}`;
+  if (newRelativePath === relativePath) {
+    return { path: relativePath };
+  }
+
+  const config = getConfig();
+  const file = await readRepoFile(config, relativePath);
+  if (!file) {
+    throw new Error('File not found');
+  }
+
+  const existing = await readRepoFile(config, newRelativePath);
+  if (existing) {
+    throw new Error('A file with that name already exists.');
+  }
+
+  await writeRepoFile(
+    config,
+    newRelativePath,
+    file.content,
+    commitMessage('rename', `${relativePath} -> ${newRelativePath}`),
+  );
+  await deleteRepoFile(
+    config,
+    relativePath,
+    commitMessage('rename', `${relativePath} -> ${newRelativePath}`),
+  );
+
+  return { path: newRelativePath };
+}
+
+export async function renameFolder(
+  relativePath: string,
+  newName: string,
+): Promise<{ path: string }> {
+  const slug = slugifyTitle(newName);
+  if (!slug) {
+    throw new Error('Name is required.');
+  }
+
+  const parent = relativePath.includes('/')
+    ? relativePath.slice(0, relativePath.lastIndexOf('/'))
+    : '';
+  const newRelativePath = parent ? `${parent}/${slug}` : slug;
+
+  if (newRelativePath === relativePath) {
+    return { path: relativePath };
+  }
+
+  const config = getConfig();
+  const prefix = `${relativePath.replace(/\/$/, '')}/`;
+  const paths = await listRelativeContentPaths(config);
+  const targets = paths.filter(
+    (entry) => entry === relativePath.replace(/\/$/, '') || entry.startsWith(prefix),
+  );
+
+  if (targets.length === 0) {
+    throw new Error('Folder not found');
+  }
+
+  const existingPrefix = await listRelativeContentPaths(config);
+  if (existingPrefix.some((entry) => entry === newRelativePath || entry.startsWith(`${newRelativePath}/`))) {
+    throw new Error('A folder with that name already exists.');
+  }
+
+  for (const target of [...targets].sort((a, b) => a.length - b.length)) {
+    const suffix = target === relativePath ? '' : target.slice(prefix.length);
+    const nextPath = suffix ? `${newRelativePath}/${suffix}` : newRelativePath;
+    const file = await readRepoFile(config, target);
+    if (!file) continue;
+
+    await writeRepoFile(
+      config,
+      nextPath,
+      file.content,
+      commitMessage('rename', `${target} -> ${nextPath}`),
+    );
+  }
+
+  for (const target of [...targets].sort((a, b) => b.length - a.length)) {
+    await deleteRepoFile(
+      config,
+      target,
+      commitMessage('rename', `${relativePath} -> ${newRelativePath}`),
+    );
+  }
+
+  return { path: newRelativePath };
 }
 
 export async function readMeta(relativePath: string): Promise<MetaFile> {

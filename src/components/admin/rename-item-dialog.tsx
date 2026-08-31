@@ -12,60 +12,60 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import type { TreeTarget } from '@/lib/admin/tree-target';
+import { treeTargetLabel } from '@/lib/admin/tree-target';
 
-export type CreateItemKind = 'page' | 'folder';
-
-type CreateItemDialogProps = {
+type RenameItemDialogProps = {
   open: boolean;
-  kind: CreateItemKind;
-  parentLabel?: string;
+  target: TreeTarget | null;
   onClose: () => void;
-  onSubmit: (title: string) => void;
+  onSubmit: (name: string) => void;
   loading?: boolean;
 };
 
-export function CreateItemDialog({
+export function RenameItemDialog({
   open,
-  kind,
-  parentLabel,
+  target,
   onClose,
   onSubmit,
   loading = false,
-}: CreateItemDialogProps) {
+}: RenameItemDialogProps) {
   const inputId = useId();
-  const [title, setTitle] = useState('');
+  const [name, setName] = useState('');
 
   useEffect(() => {
-    if (open) setTitle('');
-  }, [open]);
+    if (open && target) {
+      setName(treeTargetLabel(target));
+    }
+  }, [open, target]);
 
-  const label = kind === 'folder' ? 'New folder' : 'New page';
+  const label = target?.kind === 'folder' ? 'Folder name' : 'Page name';
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent showCloseButton={!loading}>
         <DialogHeader>
-          <DialogTitle>{label}</DialogTitle>
-          {parentLabel ? (
+          <DialogTitle>Rename {target?.kind === 'folder' ? 'folder' : 'page'}</DialogTitle>
+          {target ? (
             <DialogDescription>
-              Inside <code>{parentLabel}</code>
+              Current path: <code>{target.path}</code>
             </DialogDescription>
           ) : null}
         </DialogHeader>
 
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor={inputId}>Title</FieldLabel>
+            <FieldLabel htmlFor={inputId}>{label}</FieldLabel>
             <Input
               id={inputId}
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder={kind === 'folder' ? 'API' : 'Quickstart'}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder={target?.kind === 'folder' ? 'API' : 'Quickstart'}
               autoFocus
               disabled={loading}
               onKeyDown={(event) => {
-                if (event.key === 'Enter' && title.trim() && !loading) {
-                  onSubmit(title.trim());
+                if (event.key === 'Enter' && name.trim() && !loading) {
+                  onSubmit(name.trim());
                 }
               }}
             />
@@ -78,10 +78,10 @@ export function CreateItemDialog({
           </Button>
           <Button
             type="button"
-            disabled={!title.trim() || loading}
-            onClick={() => onSubmit(title.trim())}
+            disabled={!name.trim() || loading}
+            onClick={() => onSubmit(name.trim())}
           >
-            {loading ? 'Creating…' : 'Create'}
+            {loading ? 'Renaming…' : 'Rename'}
           </Button>
         </DialogFooter>
       </DialogContent>
