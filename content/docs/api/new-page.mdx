@@ -5,3 +5,76 @@ title: new-page
 ## Overview
 
 Start writing here.
+
+
+
+/tab
+
+<Tabs items={["npm","pnpm"]}>
+  <Tab value="npm">
+    ```bash
+    npm install
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add
+    ```
+  </Tab>
+</Tabs>
+
+/acc
+
+<Accordions type="single">
+  <Accordion title="Question">
+    Answer goes here.
+  </Accordion>
+  <Accordion title="Question 2">
+    Answer goes here.
+  </Accordion>
+</Accordions>
+
+### Test h3
+
+/ste
+
+<Steps>
+  <Step>
+    First step
+  </Step>
+  <Step>
+    Second step
+  </Step>
+  <Step>
+    third step
+  </Step>
+</Steps>
+
+> this is quote "
+
+<Cards>
+  <Card title="Card title" description="Short description." href="https://fumtina.vercel.app/" />
+  <Card title="Card 2" description="Short description." href="/" />
+</Cards>
+
+## Local (llama.cpp)
+
+
+
+```
+./llama-cli -m anxious-model-0.5-q4_k_m.gguf \
+  -c 8192 \
+  -n 512 \
+  --temp 0.2 \
+  --top-p 0.9 \
+  -p "List assumptions before answering. Question: Should we ship without a canary?"
+```
+
+<Files>
+  <Folder name="src" defaultOpen={true}>
+    <File name="index.ts" />
+  </Folder>
+  <File name="package.json" />
+</Files>
+
+<GithubInfo owner="DocForge" repo="doc-forge-gilt.vercel.app" />
