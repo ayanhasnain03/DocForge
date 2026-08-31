@@ -1,0 +1,72 @@
+---
+title: Streaming
+description: Server-sent events for token streaming on completions and chat.
+---
+
+Set `"stream": true` and `Accept: text/event-stream` to receive incremental tokens.
+
+## Event types
+
+| Event | Payload |
+| ----- | ------- |
+| `delta` | Partial text or tool-call fragments |
+| `error` | Mid-stream failure (`code`, `message`) |
+| `done` | Final usage and `finish_reason` |
+
+## Chat stream sample
+
+```bash
+curl -N https://api.harc.dev/v1/chat/completions \
+  -H "Authorization: Bearer $HARC_API_KEY" \
+  -H "Accept: text/event-stream" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "anxious-model-0.5",
+    "stream": true,
+    "messages": [
+      {"role": "user", "content": "Outline risks of a Friday deploy."}
+    ]
+  }'
+```
+
+```text
+event: delta
+data: {"id":"req_aa12","choices":[{"index":0,"delta":{"role":"assistant","content":""}}]}
+
+event: delta
+data: {"id":"req_aa12","choices":[{"index":0,"delta":{"content":"Assumptions:\n"}}]}
+
+event: delta
+data: {"id":"req_aa12","choices":[{"index":0,"delta":{"content":"- On-call coverage is thin\n"}}]}
+
+event: done
+data: {"id":"req_aa12","choices":[{"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"completion_tokens":86,"total_tokens":110}}
+```
+
+## Heartbeats
+
+Idle connections may emit comment lines (`: ping`) every 15 seconds. Ignore them in parsers.
+
+## Cancellation
+
+Close the HTTP connection to abort generation. Billed tokens include tokens already produced. Prefer short `max_tokens` when exploring.
+
+## SDK streaming
+
+```ts
+const stream = await client.chat.stream({
+  model: 'anxious-model-0.5',
+  messages: [{ role: 'user', content: 'Summarize the runbook.' }],
+});
+
+for await (const event of stream) {
+  if (event.type === 'delta') process.stdout.write(event.content ?? '');
+  if (event.type === 'done') console.log('\n', event.usage);
+}
+```
+
+## Limits
+
+- Max stream duration: **10 minutes**
+- Max events per stream: **20_000**
+- Proxies that buffer SSE will appear stuck — disable response buffering on your edge

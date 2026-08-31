@@ -1,0 +1,70 @@
+---
+title: Authentication
+description: Authenticate API requests with bearer tokens, scopes, and key rotation.
+---
+
+Send your API key in the `Authorization` header:
+
+```http
+Authorization: Bearer harc_live_4f9c2a81e0b3
+```
+
+Keys are scoped per workspace. Rotate compromised keys from the dashboard; previous keys stop working within 60 seconds.
+
+## Key types
+
+| Prefix | Environment | Notes |
+| ------ | ----------- | ----- |
+| `harc_live_` | Production | Bills against the live plan |
+| `harc_test_` | Sandbox | Shared models, lower rate limits, no SLA |
+| `harc_svc_` | Service account | Machine-to-machine; no interactive login |
+
+Never embed live keys in client-side bundles, public repos, or CI logs. Prefer environment variables or a secret manager.
+
+## Scopes
+
+| Scope | Allows |
+| ----- | ------ |
+| `completions:write` | Create completions and chat completions |
+| `embeddings:write` | Create embeddings |
+| `models:read` | List and describe models |
+| `usage:read` | Read usage and quota |
+| `admin:keys` | Create and revoke keys (dashboard / management API only) |
+
+A key with no scopes returns `403 forbidden` on every resource call.
+
+## Example — curl
+
+```bash
+curl https://api.harc.dev/v1/models \
+  -H "Authorization: Bearer $HARC_API_KEY" \
+  -H "Accept: application/json"
+```
+
+## Example — TypeScript
+
+```ts
+import { Harc } from '@harc/sdk';
+
+const client = new Harc({
+  apiKey: process.env.HARC_API_KEY!,
+  // Optional: pin region
+  baseUrl: 'https://eu.api.harc.dev/v1',
+});
+```
+
+## Rotation playbook
+
+1. Create a new key with the same scopes.
+2. Deploy the new secret to all producers.
+3. Confirm traffic on the new `key_` id in the usage dashboard.
+4. Revoke the old key.
+5. Wait 60 seconds, then verify old requests return `401`.
+
+## Organization SSO
+
+Enterprise workspaces can require SSO for dashboard login. API keys remain bearer tokens; SSO does not replace `Authorization` headers on the HTTP API.
+
+## IP allowlists
+
+Optional on enterprise plans. Requests from non-allowlisted CIDRs receive `403` with code `ip_not_allowed`. Update allowlists via the dashboard; propagation is typically under two minutes.

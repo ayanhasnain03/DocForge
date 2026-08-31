@@ -1,0 +1,99 @@
+---
+title: Quickstart
+description: Send your first request with the Harc SDK in under five minutes.
+---
+
+## 1. Install and set a key
+
+```bash
+pnpm add @harc/sdk
+export HARC_API_KEY=harc_test_your_key
+```
+
+## 2. Complete a prompt (TypeScript)
+
+```ts
+import { Harc } from '@harc/sdk';
+
+const client = new Harc({ apiKey: process.env.HARC_API_KEY });
+
+const result = await client.models.complete({
+  model: 'anxious-model-0.5',
+  prompt: 'Summarize this release note in two sentences.',
+  maxTokens: 128,
+  temperature: 0.2,
+});
+
+console.log(result.text);
+console.log(result.usage);
+console.log(result.requestId);
+```
+
+Expect a response with `text`, `usage`, and `requestId`. Retries use exponential backoff for `429` and `5xx`.
+
+## 3. Chat messages
+
+```ts
+const chat = await client.chat.complete({
+  model: 'anxious-model-0.5',
+  messages: [
+    { role: 'system', content: 'State uncertainty when evidence is weak.' },
+    { role: 'user', content: 'Should we ship without a canary this Friday?' },
+  ],
+});
+
+console.log(chat.message.content);
+```
+
+## 4. Stream tokens
+
+```ts
+const stream = await client.chat.stream({
+  model: 'anxious-model-0.5',
+  messages: [{ role: 'user', content: 'List five deploy risks.' }],
+});
+
+for await (const part of stream) {
+  if (part.type === 'delta' && part.content) {
+    process.stdout.write(part.content);
+  }
+}
+```
+
+## 5. Embeddings
+
+```ts
+const vectors = await client.embeddings.create({
+  model: 'harc-embed-small',
+  input: ['auth outage runbook', 'canary checklist'],
+});
+
+console.log(vectors.data[0].embedding.length); // 768
+```
+
+## Python equivalent
+
+```python
+from harc import Harc
+
+client = Harc()  # reads HARC_API_KEY
+
+result = client.completions.create(
+    model="anxious-model-0.5",
+    prompt="Summarize this release note in two sentences.",
+    max_tokens=128,
+    temperature=0.2,
+)
+print(result.text)
+```
+
+## Common pitfalls
+
+| Symptom | Fix |
+| ------- | --- |
+| `unauthorized` | Check key prefix and env var name |
+| `model_not_found` | Call `client.models.list()` — spelling must match |
+| Hang on stream | Disable proxy buffering; use Node 18+ |
+| Double billing on retry | Pass `idempotencyKey` on writes |
+
+Next: [TypeScript reference](/sdk/typescript) or [Python reference](/sdk/python).

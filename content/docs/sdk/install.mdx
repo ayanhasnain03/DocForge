@@ -1,0 +1,83 @@
+---
+title: Install
+description: Add the Harc SDK to your project and configure credentials.
+---
+
+## TypeScript / Node
+
+```bash
+pnpm add @harc/sdk
+# or
+npm install @harc/sdk
+# or
+yarn add @harc/sdk
+```
+
+Requires Node.js 18+ or a modern Bun / Deno runtime with `fetch`.
+
+## Python
+
+```bash
+pip install harc-sdk
+# or
+uv add harc-sdk
+# or
+poetry add harc-sdk
+```
+
+Optional extras:
+
+```bash
+pip install "harc-sdk[aiohttp]"   # alternate async transport
+pip install "harc-sdk[cli]"       # `harc` CLI for smoke tests
+```
+
+## Go
+
+```bash
+go get github.com/harc/sdk-go@v0.9.0
+```
+
+## Rust
+
+```toml
+# Cargo.toml
+[dependencies]
+harc-sdk = "0.3"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+```
+
+## Environment
+
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `HARC_API_KEY` | Yes* | Bearer token (`harc_live_…` or `harc_test_…`) |
+| `HARC_BASE_URL` | No | Override API host (default `https://api.harc.dev/v1`) |
+| `HARC_REGION` | No | `us-east` \| `eu-west` \| `ap-south` |
+| `HARC_TIMEOUT_MS` | No | Request timeout (default `60000`) |
+| `HARC_MAX_RETRIES` | No | Retry budget (default `3`) |
+
+\*Required unless you pass `apiKey` / `api_key` in the client constructor.
+
+```bash
+# .env example
+HARC_API_KEY=harc_test_replace_me
+HARC_REGION=us-east
+```
+
+## Verify install
+
+```bash
+# TypeScript
+npx tsx -e "import { Harc } from '@harc/sdk'; console.log(Harc.version)"
+
+# Python
+python -c "import harc; print(harc.__version__)"
+
+# CLI (Python extra)
+harc models list
+```
+
+## Corporate proxies
+
+Set `HTTPS_PROXY` / `HTTP_PROXY` as usual. The TypeScript SDK respects undici/env proxy settings when `HARC_TRUST_PROXY=1`. For custom TLS roots, point `NODE_EXTRA_CA_CERTS` or `REQUESTS_CA_BUNDLE` (Python) at your PEM bundle.

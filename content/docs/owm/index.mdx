@@ -1,0 +1,52 @@
+---
+title: OWM
+description: Open weight models released by Harc for local and cloud use.
+---
+
+OWM (Open Weight Models) are downloadable checkpoints with public weights, documented licenses, and release cards you can cite in evals.
+
+## Available models
+
+| Model | Size | Context | License | Release |
+| ----- | ---- | ------- | ------- | ------- |
+| [Anxious Model 0.5](/owm/anxious-model-0.5) | 7B dense | 32k | Apache 2.0 | 2026-03-12 |
+
+## What you get with each release
+
+| Artifact | Format | Typical size |
+| -------- | ------ | ------------ |
+| BF16 safetensors | Hugging Face layout | ~14 GB |
+| Q4_K_M GGUF | llama.cpp | ~4.2 GB |
+| Q5_K_M GGUF | llama.cpp | ~5.1 GB |
+| Tokenizer + chat template | `tokenizer.json`, Jinja | &lt; 5 MB |
+| Model card | Markdown / JSON | — |
+| Eval snapshot | CSV + notes | — |
+
+## Hosting & mirrors
+
+| Channel | URL pattern |
+| ------- | ----------- |
+| Hugging Face | `https://huggingface.co/harc/` + model id |
+| Direct CDN | `https://weights.harc.dev/` + model id + file |
+| IPFS (experimental) | CID listed on the release page |
+
+Checksums (SHA-256) ship in `SHA256SUMS` next to each artifact. Verify before loading into production runtimes.
+
+## Choosing a quant
+
+| Goal | Pick |
+| ---- | ---- |
+| Max quality on one 24GB GPU | BF16 or FP8 if available |
+| Laptop / 8GB VRAM | Q4_K_M |
+| Balance quality vs VRAM | Q5_K_M |
+| CPU-only smoke tests | Q4_K_M + 16GB RAM |
+
+## Roadmap (public)
+
+| Window | Focus |
+| ------ | ----- |
+| 2026 H2 | Anxious 0.6 — stronger tool use, 64k context |
+| 2026 H2 | Distilled 1.5B edge variant |
+| 2027 H1 | Multilingual calibration pack |
+
+Start with [Anxious Model 0.5](/owm/anxious-model-0.5) for overview, architecture, usage, benchmarks, hardware, changelog, and licence.

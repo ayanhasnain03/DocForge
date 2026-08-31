@@ -1,0 +1,222 @@
+---
+title: Endpoints
+description: Core REST endpoints for completions, chat, embeddings, models, and usage.
+---
+
+## `POST /v1/completions`
+
+Create a completion for a model.
+
+### Request
+
+```json
+{
+  "model": "anxious-model-0.5",
+  "prompt": "List three risk factors for shipping without a canary.",
+  "max_tokens": 256,
+  "temperature": 0.2,
+  "top_p": 0.9,
+  "stop": ["\n\n"],
+  "stream": false,
+  "metadata": {
+    "traceId": "incident-4412"
+  }
+}
+```
+
+| Field | Type | Default | Description |
+| ----- | ---- | ------- | ----------- |
+| `model` | string | required | Model id from `/v1/models` |
+| `prompt` | string \| string[] | required | Prompt text or tokenized array |
+| `max_tokens` | integer | `256` | Max generated tokens (1–8192) |
+| `temperature` | number | `0.2` | Sampling temperature (0–2) |
+| `top_p` | number | `1` | Nucleus sampling |
+| `stop` | string[] | `[]` | Up to 4 stop sequences |
+| `stream` | boolean | `false` | SSE token stream when true |
+| `seed` | integer | unset | Best-effort reproducibility |
+| `metadata` | object | `{}` | Opaque labels (max 16 keys) |
+
+### Response
+
+```json
+{
+  "id": "req_8f2c1a90",
+  "object": "completion",
+  "created": 1741784521,
+  "model": "anxious-model-0.5",
+  "choices": [
+    {
+      "index": 0,
+      "text": "1. Undetected regression in auth...\n2. ...",
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 42,
+    "completion_tokens": 118,
+    "total_tokens": 160
+  }
+}
+```
+
+Rate limit: **600 requests / minute** per live key (burst 60).
+
+---
+
+## `POST /v1/chat/completions`
+
+Chat-style messages with optional system and tool turns.
+
+### Request
+
+```json
+{
+  "model": "anxious-model-0.5",
+  "messages": [
+    {
+      "role": "system",
+      "content": "State uncertainty when evidence is weak."
+    },
+    {
+      "role": "user",
+      "content": "Should we ship without a canary?"
+    }
+  ],
+  "max_tokens": 512,
+  "temperature": 0.15
+}
+```
+
+| Role | Allowed content |
+| ---- | --------------- |
+| `system` | Instructions and policy |
+| `user` | User turns |
+| `assistant` | Prior model turns |
+| `tool` | Tool results (`tool_call_id` required) |
+
+### Streaming
+
+```http
+POST /v1/chat/completions HTTP/1.1
+Accept: text/event-stream
+Authorization: Bearer harc_live_...
+```
+
+```text
+event: delta
+data: {"choices":[{"delta":{"content":"Assuming"}}]}
+
+event: delta
+data: {"choices":[{"delta":{"content":" no canary"}}]}
+
+event: done
+data: {"usage":{"prompt_tokens":38,"completion_tokens":92}}
+```
+
+---
+
+## `POST /v1/embeddings`
+
+Create dense vectors for retrieval and clustering.
+
+```json
+{
+  "model": "harc-embed-small",
+  "input": [
+    "incident runbook for auth outages",
+    "canary rollout checklist"
+  ],
+  "dimensions": 768
+}
+```
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `model` | string | `harc-embed-small` (768d) or `harc-embed-large` (1536d) |
+| `input` | string \| string[] | Max 64 inputs per call; 8192 tokens each |
+| `dimensions` | integer | Optional truncation for Matryoshka models |
+
+Response includes `data[].embedding` as float arrays and aggregate `usage.prompt_tokens`.
+
+---
+
+## `GET /v1/models`
+
+List models available to the current workspace.
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "anxious-model-0.5",
+      "object": "model",
+      "owned_by": "harc",
+      "context_window": 32768,
+      "capabilities": ["completions", "chat"]
+    },
+    {
+      "id": "harc-embed-small",
+      "object": "model",
+      "owned_by": "harc",
+      "context_window": 8192,
+      "capabilities": ["embeddings"]
+    }
+  ]
+}
+```
+
+Rate limit: **60 requests / minute** per key.
+
+---
+
+## `GET /v1/models/:model`
+
+Describe a single model. Returns `404 not_found` if the id is unknown or not entitled.
+
+---
+
+## `GET /v1/usage`
+
+Workspace usage for a time window.
+
+```http
+GET /v1/usage?from=2026-06-01T00:00:00Z&to=2026-06-30T23:59:59Z&granularity=day
+```
+
+| Query | Description |
+| ----- | ----------- |
+| `from` / `to` | Inclusive ISO-8601 bounds (max 93 days) |
+| `granularity` | `hour` \| `day` \| `month` |
+| `model` | Optional filter |
+
+```json
+{
+  "object": "usage",
+  "granularity": "day",
+  "data": [
+    {
+      "period_start": "2026-06-01T00:00:00Z",
+      "prompt_tokens": 1204412,
+      "completion_tokens": 388201,
+      "requests": 18442,
+      "cost_usd": 412.18
+    }
+  ]
+}
+```
+
+---
+
+## `POST /v1/moderations`
+
+Optional safety check before running a completion (enterprise).
+
+```json
+{
+  "input": "user message text",
+  "model": "harc-moderation-1"
+}
+```
+
+Returns per-category scores and a boolean `flagged` recommendation. Does not block the completion API by itself — wire the result in your application.

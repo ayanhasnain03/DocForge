@@ -1,0 +1,83 @@
+---
+title: MDX Components
+description: 'Reference for Tabs, Callouts, Cards, Steps, and other Fumadocs blocks.'
+---
+
+This page demonstrates every MDX component available in the admin editor. Use the block inserter to add Tabs, Callouts, Accordions, and more.
+
+## Tabs
+
+Add a **Tabs** block, set the tab labels list, then add a **Tab** child for each label. Labels and Tab blocks must match and stay in the same order.
+
+<Tabs items={["npm", "pnpm", "yarn"]}>
+  <Tab value="npm">
+    ```bash
+    npm install @harc/sdk
+    ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add @harc/sdk
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add @harc/sdk
+    ```
+  </Tab>
+</Tabs>
+
+## Callout
+
+<Callout title="Tip" type="idea">
+  Use callouts for tips, warnings, and notes. Pick a type in the admin — info, warning, error, success, or idea.
+</Callout>
+
+## Cards
+
+A single **Card** spans full width. Use **Cards** for a responsive grid.
+
+<Cards>
+  <Card title="Install" description="Add the SDK to your project." href="/sdk/install" />
+  <Card title="Quickstart" description="Send your first request in minutes." href="/sdk/quickstart" />
+  <Card title="TypeScript" description="Types, streaming, and helpers." href="/sdk/typescript" />
+</Cards>
+
+## Steps
+
+<Steps>
+  <Step>
+    Create an API key in the Harc dashboard.
+  </Step>
+  <Step>
+    Install `@harc/sdk` with your package manager.
+  </Step>
+  <Step>
+    Call `client.models.complete` and log `result.text`.
+  </Step>
+</Steps>
+
+## Accordions
+
+<Accordions type="single">
+  <Accordion title="What is the admin panel?">
+    A custom editor at `/admin` for MDX files in this repo — no separate database for docs content.
+  </Accordion>
+  <Accordion title="What is Fumadocs?">
+    The docs framework powering layout, sidebar, search, and these MDX components.
+  </Accordion>
+</Accordions>
+
+## Files
+
+<Files>
+  <Folder name="src" defaultOpen={true}>
+    <File name="index.ts" />
+    <File name="client.ts" />
+  </Folder>
+  <File name="package.json" />
+</Files>
+
+## GitHub Info
+
+<GithubInfo owner="fuma-nama" repo="fumadocs" />

@@ -1,0 +1,62 @@
+---
+title: Methods
+description: Training and evaluation methods notes shared alongside OWM releases.
+---
+
+## Uncertainty-aware SFT
+
+We mix three dialogue types in roughly equal weight during late SFT:
+
+1. **Answerable** — complete evidence; expect direct answers + `confidence: high|medium`.
+2. **Partial** — missing fields; expect `Assumptions:` then a hedged answer.
+3. **Unanswerable / disallowed** — expect refusal without fabricating facts.
+
+### Loss sketch
+
+Primary next-token CE on gold tokens, plus an auxiliary head (or lexical tag) trained with a Brier-style objective on the confidence label.
+
+## DPO pair construction
+
+| Preferred | Rejected |
+| --------- | -------- |
+| Lists assumptions, then recommends | Confident ship advice with no caveats |
+| Refuses private employee data | Invents a salary figure |
+| Says “unknown — need metric X” | Guesses metric X |
+
+Pairs are filtered by human raters (2-of-3 agreement). Toxic or jailbreak-preferred pairs are excluded.
+
+## Document-aware packing
+
+When packing to 32k:
+
+- Documents are separated by hard boundaries in the attention mask when the runtime allows.
+- Fallback: insert unmistakable separator tokens and down-weight cross-boundary prediction in the loss.
+
+## Quantization without collapsing calibration
+
+Observed failure mode: Q3 models keep MMLU roughly flat but spike overconfidence. Mitigation:
+
+- Prefer Q4_K_M / Q5_K_M for production.
+- Re-run RiskCalib on every quant artifact before publishing SHA sums.
+- Avoid “confidence: high” few-shot exemplars in quant eval prompts.
+
+## Tool honesty checks
+
+Prompts omit tool results on purpose. Models that invent JSON tool payloads fail the item. Training includes counterexamples where the assistant asks to re-run the tool.
+
+## Reproducibility checklist
+
+- [ ] Pin weight SHA-256
+- [ ] Pin chat template file
+- [ ] Record harness git SHA
+- [ ] Record decoding config
+- [ ] Publish seed list
+- [ ] Note hardware and dtype / quant
+
+## Open questions
+
+| Topic | Status |
+| ----- | ------ |
+| Multilingual Brier tags | Data collection |
+| Process supervision for long plans | Experimenting |
+| Verifier models for RiskCalib | Prototyping |

@@ -1,0 +1,79 @@
+---
+title: Privacy
+description: How Harc collects and uses personal data.
+---
+
+Effective date: 2026-03-01 · Last updated: 2026-06-15
+
+We collect account email, billing details, and API usage metadata. Prompt contents are retained for abuse review for up to 30 days unless you enable zero-retention mode on enterprise plans.
+
+We do not sell personal data. Subprocessors are listed in the trust center. Contact `privacy@harc.dev` for deletion requests.
+
+## Data we collect
+
+| Category | Examples | Purpose |
+| -------- | -------- | ------- |
+| Account | Email, name, password hash / SSO id | Auth, support |
+| Billing | Address, tax IDs, last4 of card | Payments |
+| Usage | Request counts, token totals, model ids, `requestId` | Quotas, billing, reliability |
+| Content | Prompts / completions (API) | Abuse review, optional product improvement |
+| Device / logs | IP, user-agent, error traces | Security, debugging |
+| Marketing (optional) | Newsletter email | Product updates |
+
+## Retention
+
+| Data | Default retention |
+| ---- | ----------------- |
+| Account profile | Life of account + 30 days |
+| Billing records | 7 years (legal / tax) |
+| API usage aggregates | 24 months |
+| Prompt / completion content | Up to 30 days |
+| Zero-retention workspace | Content not stored after response (enterprise) |
+| Support tickets | 24 months after close |
+| Security logs | 12 months |
+
+## Legal bases (EEA / UK)
+
+| Processing | Basis |
+| ---------- | ----- |
+| Providing the API / SDK | Contract |
+| Billing and fraud prevention | Legitimate interests / legal obligation |
+| Optional analytics emails | Consent |
+| Abuse detection | Legitimate interests |
+
+## Sharing
+
+We share data with:
+
+- Cloud infrastructure and payment processors (subprocessors)
+- Enterprise admin users in your workspace
+- Authorities when required by law
+
+We do **not** sell personal data as defined under CCPA/CPRA.
+
+## Subprocessors (representative)
+
+| Vendor | Role | Region |
+| ------ | ---- | ------ |
+| Cloud hyperscaler | Compute / storage | US / EU options |
+| Payment processor | Billing | US |
+| Email delivery | Transactional mail | US |
+| Error monitoring | App diagnostics | US |
+
+The live list is maintained in the trust center and may change with notice.
+
+## Your rights
+
+Depending on location, you may request access, correction, deletion, export, or restriction. Email `privacy@harc.dev`. We respond within 30 days (or sooner where required).
+
+## Children
+
+Services are not directed to children under 16. We do not knowingly collect their data.
+
+## International transfers
+
+Where data leaves the EEA/UK, we use SCCs or equivalent safeguards. EU regional API hosts keep inference traffic in-region when you select `eu-west`.
+
+## Changes
+
+Material updates will be posted on this page and, for account holders, emailed when required.

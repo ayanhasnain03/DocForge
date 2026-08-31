@@ -1,0 +1,81 @@
+---
+title: Rate limits
+description: Quotas, burst behavior, and Retry-After handling for the Harc API.
+---
+
+Limits are enforced per API key. Exceeding a limit returns `429` with `Retry-After` in seconds.
+
+## Default quotas (live keys)
+
+| Endpoint class | RPM | Burst | TPM (tokens / min) |
+| -------------- | --- | ----- | ------------------ |
+| Completions / chat | 600 | 60 | 200_000 |
+| Embeddings | 300 | 30 | 500_000 |
+| Models / usage | 60 | 20 | n/a |
+| Moderations | 120 | 20 | 100_000 |
+
+Sandbox (`harc_test_`) keys are capped at **10%** of the live table.
+
+## Headers
+
+Every response includes:
+
+```http
+X-RateLimit-Limit: 600
+X-RateLimit-Remaining: 542
+X-RateLimit-Reset: 1741784580
+```
+
+On `429`:
+
+```http
+Retry-After: 12
+X-RateLimit-Reason: rpm
+```
+
+`X-RateLimit-Reason` is `rpm`, `tpm`, or `concurrent`.
+
+## Concurrent in-flight
+
+Default max concurrent requests per key: **40**. Streaming connections count until the final `done` event.
+
+## Raising limits
+
+| Plan | Completions RPM | Notes |
+| ---- | --------------- | ----- |
+| Hobby | 60 | Soft burst only |
+| Pro | 600 | Default table above |
+| Team | 2_000 | Shared org pool optional |
+| Enterprise | Custom | Dedicated capacity available |
+
+Open a ticket with peak RPM, TPM, and region preference. Increases usually land within one business day for Pro and above.
+
+## Client guidance
+
+1. Honor `Retry-After`; do not hot-loop.
+2. Use exponential backoff with jitter for `429` and `503`.
+3. Prefer `Idempotency-Key` on write retries.
+4. Batch embeddings (up to 64 inputs) instead of one-at-a-time calls.
+5. Cache `GET /v1/models` for at least 5 minutes.
+
+## Worked example
+
+```ts
+async function completeWithRetry(body: unknown, attempt = 0) {
+  const res = await fetch('https://api.harc.dev/v1/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.HARC_API_KEY}`,
+      'Content-Type': 'application/json',
+      'Idempotency-Key': crypto.randomUUID(),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (res.status !== 429 || attempt >= 5) return res;
+
+  const wait = Number(res.headers.get('Retry-After') ?? 1);
+  await new Promise((r) => setTimeout(r, wait * 1000));
+  return completeWithRetry(body, attempt + 1);
+}
+```

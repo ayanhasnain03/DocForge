@@ -1,0 +1,37 @@
+---
+title: Research
+description: Public research notes, papers, and evaluation protocols.
+---
+
+Research publishes methods behind OWM releases and internal eval harnesses that we can share.
+
+## Tracks
+
+| Track | Focus | Status |
+| ----- | ----- | ------ |
+| Calibration & refusal quality | Brier-style confidence, refusal precision/recall | Active |
+| Long-context retrieval | Needle probes under noisy corpora | Active |
+| Efficient quantization | Preserve uncertainty estimates under GGUF quants | Active |
+| Tool honesty | No fabricated tool results | Early |
+| Multilingual calibration | Non-English hedging quality | Planned |
+
+## Open artifacts
+
+| Artifact | Link |
+| -------- | ---- |
+| Papers & preprints | [Papers](/research/papers) |
+| Eval protocols | [Evals](/research/evals) |
+| Methods notes | [Methods](/research/methods) |
+
+## Principles
+
+1. **Release what you measure** — every OWM card cites the harness version.
+2. **Prefer calibration over leaderboard chasing** — RiskCalib sits beside MMLU.
+3. **Share negatives** — ablations and failed prompts ship in appendices when possible.
+4. **No silent data leakage** — eval items used in training are marked or removed.
+
+## Contact
+
+- General: `research@harc.dev`
+- Dataset access (gated): include paper title + intended use
+- Security-sensitive findings: `security@harc.dev` (coordinated disclosure)

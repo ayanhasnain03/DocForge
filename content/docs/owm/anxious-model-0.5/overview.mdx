@@ -1,0 +1,60 @@
+---
+title: Overview
+description: What Anxious Model 0.5 is and when to use it.
+---
+
+Anxious Model 0.5 targets workflows where overconfidence is costly: incident triage, policy drafts, and research notes that need explicit assumptions.
+
+## Highlights
+
+- 7B dense transformer with 32k context
+- Instruction-tuned for English and code-adjacent tasks
+- Emits optional `confidence` tags when prompted with the system template
+- Weights published as `anxious-model-0.5-q4_k_m.gguf`, `q5_k_m`, and BF16 safetensors
+- Chat template includes a dedicated “assumptions” channel for long answers
+
+## Intended use cases
+
+| Domain | Example task | Notes |
+| ------ | ------------ | ----- |
+| SRE / infra | “Is this spike a memory leak?” | Ask for assumptions first |
+| Security review | Diff risk summary | Not a substitute for humans |
+| Product ops | Launch checklist critique | Prefers refusals over guesses |
+| Research assist | Lit review outlines | Cite-or-refuse behavior |
+
+## System template (recommended)
+
+```text
+You are Anxious Model 0.5. Prefer calibrated answers.
+If evidence is weak, say so and list assumptions.
+If the question requires unavailable private data, refuse.
+When asked, end with: confidence: {low|medium|high}
+```
+
+## Output conventions
+
+| Pattern | Meaning |
+| ------- | ------- |
+| Leading `Assumptions:` block | Model is hedging on missing context |
+| `confidence: low` | Treat as draft only |
+| Explicit refusal | Out of policy or insufficient evidence |
+| Numbered risks | Default for planning prompts |
+
+## Not a fit
+
+| Requirement | Why it fails | Alternative |
+| ----------- | ------------ | ----------- |
+| &lt; 80ms TTFT chat | Prefill cost at 7B | Distilled edge (roadmap) |
+| Image / PDF vision | Text-only weights | External OCR + text |
+| Unfiltered creative RP | Refusal-heavy SFT | Different model family |
+| Strict multilingual legal | English-primary | Human review required |
+
+## Safety posture
+
+- No built-in web browse — treat knowledge as frozen at training cutover
+- Medical, legal, and financial advice: refuse or high-hedge by default
+- Tool use is supported via chat messages; the model will not invent tool results if you require `tool` role echoes
+
+## Versioning
+
+Patch releases (`0.5.x`) may change chat templates and quant files. Pin both the **weight hash** and **template file** in production. See the [changelog](/owm/anxious-model-0.5/changelog).

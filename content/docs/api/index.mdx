@@ -1,0 +1,72 @@
+---
+title: API
+description: REST API for models, completions, embeddings, and account usage.
+---
+
+Base URL: `https://api.harc.dev/v1`
+
+All requests require HTTPS. Responses are JSON unless you open a stream with `Accept: text/event-stream`.
+
+## Conventions
+
+| Rule | Detail |
+| ---- | ------ |
+| Timestamps | ISO-8601 UTC (`2026-03-12T14:22:01Z`) |
+| IDs | Opaque strings prefixed by resource type (`req_`, `mod_`, `key_`, `job_`) |
+| Encoding | UTF-8 request and response bodies |
+| Content-Type | `application/json` for write endpoints |
+| Idempotency | Optional `Idempotency-Key` header on `POST` (24h retention) |
+
+## Error envelope
+
+Every failed request returns:
+
+```json
+{
+  "error": {
+    "code": "rate_limited",
+    "message": "Too many requests for this key",
+    "requestId": "req_8f2c1a90",
+    "param": null,
+    "docsUrl": "https://docs.harc.dev/api/rate-limits"
+  }
+}
+```
+
+| HTTP | Code | Meaning |
+| ---- | ---- | ------- |
+| 400 | `invalid_request` | Schema or parameter error |
+| 401 | `unauthorized` | Missing or invalid API key |
+| 403 | `forbidden` | Key lacks scope for the resource |
+| 404 | `not_found` | Unknown model or path |
+| 409 | `conflict` | Idempotency key reused with different body |
+| 422 | `unprocessable` | Valid JSON, failed business rules |
+| 429 | `rate_limited` | Quota exceeded; see `Retry-After` |
+| 500 | `internal` | Unexpected server failure |
+| 503 | `overloaded` | Temporary capacity limit |
+
+## Versioning
+
+The path prefix `/v1` is stable. Breaking changes ship under `/v2` with at least 90 days of overlap. Additive fields may appear in `/v1` responses without a major bump.
+
+## Regional routing
+
+| Region | Host | Latency target (p50) |
+| ------ | ---- | -------------------- |
+| `us-east` | `api.harc.dev` (default) | &lt; 120ms control plane |
+| `eu-west` | `eu.api.harc.dev` | &lt; 140ms control plane |
+| `ap-south` | `ap.api.harc.dev` | &lt; 160ms control plane |
+
+Pass `Harc-Region: eu-west` or use the regional host. Model weights are replicated; cold starts may add 1–3s on first request to a new region.
+
+## Quick map
+
+| Endpoint | Purpose |
+| -------- | ------- |
+| [`POST /v1/completions`](/api/endpoints#post-v1completions) | Text completion |
+| [`POST /v1/chat/completions`](/api/endpoints#post-v1chatcompletions) | Chat-style messages |
+| [`POST /v1/embeddings`](/api/endpoints#post-v1embeddings) | Vector embeddings |
+| [`GET /v1/models`](/api/endpoints#get-v1models) | List available models |
+| [`GET /v1/usage`](/api/endpoints#get-v1usage) | Workspace usage window |
+
+Continue with [Authentication](/api/authentication) and the [Endpoints](/api/endpoints) reference.

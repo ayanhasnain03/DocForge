@@ -1,0 +1,135 @@
+---
+title: TypeScript
+description: TypeScript / Node client reference for @harc/sdk.
+---
+
+## Client
+
+```ts
+import { Harc, HarcError } from '@harc/sdk';
+
+const client = new Harc({
+  apiKey: process.env.HARC_API_KEY!,
+  baseUrl: 'https://api.harc.dev/v1',
+  timeoutMs: 60_000,
+  maxRetries: 3,
+  defaultHeaders: {
+    'X-App-Name': 'incident-bot',
+  },
+});
+```
+
+| Option | Type | Default |
+| ------ | ---- | ------- |
+| `apiKey` | `string` | `process.env.HARC_API_KEY` |
+| `baseUrl` | `string` | `https://api.harc.dev/v1` |
+| `timeoutMs` | `number` | `60000` |
+| `maxRetries` | `number` | `3` |
+| `fetch` | `typeof fetch` | global `fetch` |
+| `defaultHeaders` | `Record&lt;string, string&gt;` | `{}` |
+
+## Completions
+
+```ts
+const out = await client.completions.create({
+  model: 'anxious-model-0.5',
+  prompt: 'List assumptions before answering.',
+  maxTokens: 256,
+  temperature: 0.2,
+  topP: 0.9,
+  stop: ['\n\n'],
+  seed: 42,
+  idempotencyKey: 'deploy-check-4412',
+});
+```
+
+## Chat
+
+```ts
+const reply = await client.chat.complete({
+  model: 'anxious-model-0.5',
+  messages: [
+    { role: 'system', content: 'Be calibrated; refuse when unsure.' },
+    { role: 'user', content: 'Is this stack trace a memory leak?' },
+  ],
+  tools: [
+    {
+      type: 'function',
+      function: {
+        name: 'lookup_metric',
+        description: 'Fetch a metric timeseries',
+        parameters: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            window: { type: 'string' },
+          },
+          required: ['name'],
+        },
+      },
+    },
+  ],
+});
+```
+
+## Streaming
+
+```ts
+for await (const ev of await client.chat.stream({
+  model: 'anxious-model-0.5',
+  messages: [{ role: 'user', content: 'Draft a postmortem outline.' }],
+})) {
+  switch (ev.type) {
+    case 'delta':
+      process.stdout.write(ev.content ?? '');
+      break;
+    case 'error':
+      throw ev.error;
+    case 'done':
+      console.log(ev.usage);
+      break;
+  }
+}
+```
+
+## Models & usage
+
+```ts
+const models = await client.models.list();
+const anxious = await client.models.retrieve('anxious-model-0.5');
+
+const usage = await client.usage.get({
+  from: new Date('2026-06-01'),
+  to: new Date('2026-06-30'),
+  granularity: 'day',
+});
+```
+
+## Types (excerpt)
+
+```ts
+type ChatMessage =
+  | { role: 'system' | 'user' | 'assistant'; content: string }
+  | { role: 'tool'; content: string; toolCallId: string };
+
+type Usage = {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+};
+```
+
+## Error handling
+
+```ts
+try {
+  await client.chat.complete({ model: 'nope', messages: [] });
+} catch (err) {
+  if (err instanceof HarcError) {
+    console.error(err.code, err.status, err.requestId);
+  }
+  throw err;
+}
+```
+
+See [Errors & retries](/sdk/errors) for the full code table.

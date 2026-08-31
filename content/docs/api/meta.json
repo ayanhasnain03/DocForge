@@ -1,0 +1,16 @@
+{
+  "title": "API",
+  "description": "HTTP API reference",
+  "icon": "Code2",
+  "root": true,
+  "defaultOpen": true,
+  "collapsible": true,
+  "pages": [
+    "new-page",
+    "authentication",
+    "endpoints",
+    "streaming",
+    "rate-limits",
+    "..."
+  ]
+}

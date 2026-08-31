@@ -1,0 +1,121 @@
+---
+title: Python
+description: Sync and async Python client reference for harc-sdk.
+---
+
+## Client
+
+```python
+from harc import Harc
+
+client = Harc(
+    api_key=None,          # defaults to HARC_API_KEY
+    base_url="https://api.harc.dev/v1",
+    timeout=60.0,
+    max_retries=3,
+)
+```
+
+## Completions (sync)
+
+```python
+result = client.completions.create(
+    model="anxious-model-0.5",
+    prompt="List three risk factors",
+    max_tokens=256,
+    temperature=0.2,
+    metadata={"trace_id": "incident-4412"},
+)
+print(result.text)
+print(result.usage.total_tokens)
+```
+
+## Chat (sync)
+
+```python
+chat = client.chat.completions.create(
+    model="anxious-model-0.5",
+    messages=[
+        {"role": "system", "content": "State uncertainty when evidence is weak."},
+        {"role": "user", "content": "Should we ship without a canary?"},
+    ],
+)
+print(chat.choices[0].message.content)
+```
+
+## Async client
+
+```python
+import asyncio
+from harc import AsyncHarc
+
+async def main():
+    async with AsyncHarc() as client:
+        stream = await client.chat.completions.create(
+            model="anxious-model-0.5",
+            messages=[{"role": "user", "content": "Outline five deploy risks."}],
+            stream=True,
+        )
+        async for event in stream:
+            if event.delta:
+                print(event.delta, end="", flush=True)
+
+asyncio.run(main())
+```
+
+## Embeddings
+
+```python
+emb = client.embeddings.create(
+    model="harc-embed-small",
+    input=["runbook: auth", "runbook: canary"],
+)
+assert len(emb.data[0].embedding) == 768
+```
+
+## Pagination helpers
+
+```python
+for page in client.usage.iter_pages(from_="2026-01-01", to="2026-06-30", granularity="day"):
+    for row in page.data:
+        print(row.period_start, row.cost_usd)
+```
+
+## Pydantic models
+
+Responses are Pydantic v2 models. Convert freely:
+
+```python
+payload = result.model_dump(by_alias=True)
+json_str = result.model_dump_json()
+```
+
+## Exceptions
+
+```python
+from harc import (
+    AuthenticationError,
+    RateLimitError,
+    APIStatusError,
+    APIConnectionError,
+)
+
+try:
+    client.completions.create(model="anxious-model-0.5", prompt="hi")
+except RateLimitError as e:
+    print("retry after", e.retry_after)
+except AuthenticationError:
+    print("bad key")
+except APIStatusError as e:
+    print(e.status_code, e.request_id, e.body)
+except APIConnectionError:
+    print("network / DNS")
+```
+
+## CLI
+
+```bash
+harc models list
+harc complete --model anxious-model-0.5 --prompt "ping"
+harc usage --from 2026-06-01 --to 2026-06-30
+```

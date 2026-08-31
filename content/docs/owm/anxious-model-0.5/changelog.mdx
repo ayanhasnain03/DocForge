@@ -1,0 +1,67 @@
+---
+title: Changelog
+description: Release history for Anxious Model 0.5.
+---
+
+## 0.5.2 — 2026-06-01
+
+### Fixes
+
+- Fixed chat template trailing newline that truncated first tool call
+- Corrected EOS handling when multiple stop strings were provided via API
+
+### Improvements
+
+- Raised default RoPE scale for 16k–32k contexts
+- Slightly lower overconfidence rate on RiskCalib (−0.02 Brier)
+
+### Artifacts
+
+- Re-issued Q4_K_M and Q5_K_M GGUF (new SHA-256 — re-download)
+- BF16 weights unchanged; template-only bump for HF repo
+
+---
+
+## 0.5.1 — 2026-04-18
+
+### Improvements
+
+- Improved refusal phrasing on medical and legal advice prompts
+- Better JSON adherence when asked for structured risk lists
+- Published Q5_K_M GGUF
+
+### Docs
+
+- Expanded hardware table and vLLM serve example
+
+---
+
+## 0.5.0 — 2026-03-12
+
+### Initial open-weight release
+
+- BF16 safetensors on Hugging Face (`harc/anxious-model-0.5`)
+- Q4_K_M GGUF on CDN + HF
+- Model card, eval snapshot, Apache 2.0 licence
+- RiskCalib score 0.81 (1 − Brier)
+
+### Known limitations at launch
+
+- Multilingual quality uneven outside English
+- Tool calling works but requires strict message schema
+- 32k quality degrades past ~28k on adversarial needles
+
+---
+
+## Upgrade guide
+
+| From | To | Action |
+| ---- | -- | ------ |
+| 0.5.0 → 0.5.1 | Optional | Pull Q5 if you want; BF16 optional |
+| 0.5.1 → 0.5.2 | Recommended | Update GGUF **and** chat template |
+| Any → pin | Production | Lock SHA-256 in your deploy manifest |
+
+```bash
+# verify after download
+sha256sum -c SHA256SUMS
+```

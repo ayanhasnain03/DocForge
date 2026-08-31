@@ -1,0 +1,76 @@
+---
+title: Architecture
+description: Model architecture and training sketch for Anxious Model 0.5.
+---
+
+## Core stack
+
+| Component | Value |
+| --------- | ----- |
+| Layers | 32 |
+| Hidden size | 4096 |
+| Intermediate (FFN) | 11008 |
+| Attention heads | 32 |
+| KV heads | 8 (GQA) |
+| Head dim | 128 |
+| Vocab | 128256 |
+| Positional encoding | RoPE, theta 500000 |
+| Activation | SiLU (SwiGLU) |
+| Norm | RMSNorm (eps 1e-5) |
+| Tie embeddings | No |
+
+## Context & RoPE
+
+| Setting | Value |
+| ------- | ----- |
+| Native context | 8192 during early pretrain |
+| Mid-train packing | up to 32768 |
+| RoPE scale (0.5.2+) | Adjusted for 16k–32k stability |
+| Sliding window | Not used |
+
+## Parameter breakdown (approx.)
+
+| Block | Parameters |
+| ----- | ---------- |
+| Embeddings | ~0.52B |
+| Attention (QKV + O, GQA) | ~2.1B |
+| MLP | ~4.2B |
+| Norms / other | &lt; 0.05B |
+| **Total** | **~7B** |
+
+## Training sketch
+
+1. **Pretrain** on 2.1T tokens (web, code, technical PDFs, curated forums).
+2. **Mid-train** on long-context packing up to 32k with document-aware masking.
+3. **SFT** on 180k preference-aligned dialogues with uncertainty prompts and refusal pairs.
+4. **DPO** round focused on overconfident answers vs calibrated refusals (~40k pairs).
+5. **Safety mix** — policy refusals, jailbreak resistance, and tool-honesty checks.
+
+### Data mix (pretrain, illustrative)
+
+| Bucket | Share |
+| ------ | ----- |
+| General web | 45% |
+| Code & config | 22% |
+| Scientific / technical PDF | 15% |
+| Math & reasoning | 8% |
+| Dialogue / instructional | 7% |
+| Other curated | 3% |
+
+## Tokenizer
+
+Byte-level BPE compatible with common open stacks (128256 vocab). Special tokens:
+
+| Token | Role |
+| ----- | ---- |
+| <code>&lt;\|begin_of_text\|&gt;</code> | BOS |
+| <code>&lt;\|eot_id\|&gt;</code> | End of turn |
+| <code>&lt;\|start_header_id\|&gt;</code> / <code>&lt;\|end_header_id\|&gt;</code> | Role headers |
+
+FlashAttention-2 kernels are supported in the reference runtime. SDPA fallback works on CPU and older GPUs.
+
+## Inference graph notes
+
+- Prefill is compute-bound; decode is memory-bound on consumer GPUs.
+- GQA (8 KV heads) cuts KV cache roughly 4× vs MHA at equal head dim.
+- At 32k context Q4, plan ~2–3 GB extra KV on top of weights depending on batch.

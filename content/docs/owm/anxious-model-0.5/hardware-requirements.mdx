@@ -1,0 +1,72 @@
+---
+title: Hardware requirements
+description: Minimum and recommended hardware for Anxious Model 0.5.
+---
+
+## Minimum
+
+| Quant | VRAM / RAM | Disk | Expected decode |
+| ----- | ---------- | ---- | --------------- |
+| Q3_K_M | 4.5 GB VRAM or 8 GB RAM | 3.4 GB | Usable, weaker calib |
+| Q4_K_M | 6 GB VRAM or 10 GB RAM | 4.2 GB | Good default |
+| Q5_K_M | 7.5 GB VRAM | 5.1 GB | Near-BF16 quality |
+| Q6_K | 9 GB VRAM | 6.0 GB | Diminishing returns |
+| BF16 | 16 GB VRAM | 14 GB | Full fidelity |
+| BF16 + 32k KV | 20 GB+ VRAM | 14 GB | Long context |
+
+## Recommended
+
+| Workload | Spec |
+| -------- | ---- |
+| Interactive chat 8k | 12+ GB VRAM, Q5, NVMe |
+| Batch eval 32k | 24 GB VRAM (4090 / A10) or A100 |
+| Multi-user API (vLLM) | 1× A100 80GB or 2× L40S |
+| CPU-only smoke | 16 GB RAM, Q4, 6–10 tok/s |
+
+## Software
+
+| Stack | Version |
+| ------ | ------- |
+| CUDA | 12.1+ |
+| cuDNN | matching CUDA |
+| Driver (NVIDIA) | 535+ |
+| Metal (Apple) | macOS 14+ |
+| llama.cpp | build after 2026-03 |
+| transformers | 4.44+ |
+| vLLM | 0.6+ |
+| PyTorch | 2.4+ |
+
+## Memory formula (rule of thumb)
+
+```text
+weights_gb + (batch * seq * layers * kv_heads * head_dim * 2 * bytes) / 1e9
+```
+
+For Anxious 0.5 GQA at FP16 KV:
+
+| Context | Batch 1 KV (approx) |
+| ------- | ------------------- |
+| 4k | ~0.5 GB |
+| 8k | ~1.0 GB |
+| 16k | ~2.0 GB |
+| 32k | ~4.0 GB |
+
+Add weights from the minimum table. Q4 weights + 32k KV often fits in 12 GB with room to spare.
+
+## Disk & load times
+
+| Medium | BF16 load | Q4 load |
+| ------ | --------- | ------- |
+| NVMe Gen4 | ~6–8 s | ~2–3 s |
+| SATA SSD | ~20 s | ~8 s |
+| HDD | not recommended | not recommended |
+
+## Networking (API / multi-node)
+
+| Link | Notes |
+| ---- | ----- |
+| 10 GbE | Fine for single-GPU serving |
+| InfiniBand / RoCE | Tensor parallel across nodes |
+| Egress to HF | Budget ~14 GB first pull; cache locally |
+
+CPU-only inference works on 16 GB RAM machines at roughly 6–10 tokens/s with Q4.

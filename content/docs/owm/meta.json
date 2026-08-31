@@ -1,0 +1,12 @@
+{
+  "title": "OWM",
+  "description": "Open weight models",
+  "icon": "Brain",
+  "root": true,
+  "defaultOpen": true,
+  "collapsible": true,
+  "pages": [
+    "anxious-model-0.5",
+    "..."
+  ]
+}

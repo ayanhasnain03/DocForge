@@ -1,0 +1,13 @@
+{
+  "title": "Legal",
+  "description": "Privacy, terms, and compliance",
+  "icon": "Scale",
+  "root": true,
+  "defaultOpen": false,
+  "collapsible": true,
+  "pages": [
+    "privacy",
+    "terms",
+    "..."
+  ]
+}

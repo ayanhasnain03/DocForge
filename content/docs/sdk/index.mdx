@@ -1,0 +1,48 @@
+---
+title: SDK
+description: Install and use the Harc client SDKs across languages.
+---
+
+The Harc SDK wraps common auth, streaming, retries, and typed errors so you do not wire them by hand.
+
+## Supported runtimes
+
+| Language | Package | Min version | Status |
+| -------- | ------- | ----------- | ------ |
+| TypeScript / Node 18+ | `@harc/sdk` | 1.4.0 | Stable |
+| Python 3.10+ | `harc-sdk` | 1.4.0 | Stable |
+| Go 1.22+ | `github.com/harc/sdk-go` | 0.9.0 | Beta |
+| Rust 1.75+ | `harc-sdk` | 0.3.0 | Experimental |
+| Java 17+ | `dev.harc:sdk` | 0.2.0 | Experimental |
+
+## Feature matrix
+
+| Feature | TS | Python | Go | Rust |
+| ------- | -- | ------ | -- | ---- |
+| Completions | ✓ | ✓ | ✓ | ✓ |
+| Chat + streaming | ✓ | ✓ | ✓ | Partial |
+| Embeddings | ✓ | ✓ | ✓ | ✓ |
+| Automatic retries | ✓ | ✓ | ✓ | Manual |
+| Idempotency keys | ✓ | ✓ | ✓ | ✓ |
+| Async clients | ✓ | ✓ | ✓ | ✓ |
+
+## Design principles
+
+1. **One client object** — configure once (`apiKey`, `baseUrl`, `timeout`, `maxRetries`).
+2. **Fail loudly** — typed exceptions for `401`, `429`, validation, and network timeouts.
+3. **Streaming first-class** — async iterators / channels, not callback-only APIs.
+4. **No silent model swaps** — unknown model ids raise before the request leaves the process when using strict mode.
+
+## Configuration sources (priority)
+
+1. Explicit constructor options
+2. Environment variables (`HARC_API_KEY`, `HARC_BASE_URL`, `HARC_REGION`)
+3. SDK defaults (`https://api.harc.dev/v1`, 60s timeout, 3 retries)
+
+## Next steps
+
+- [Install](/sdk/install) — dependency lines and env setup
+- [Quickstart](/sdk/quickstart) — first completion in under five minutes
+- [TypeScript](/sdk/typescript) — full client reference
+- [Python](/sdk/python) — sync/async patterns
+- [Errors & retries](/sdk/errors) — how failures surface

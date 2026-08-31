@@ -1,0 +1,17 @@
+{
+  "title": "Anxious Model 0.5",
+  "description": "Open weight reasoning model",
+  "icon": "Sparkles",
+  "defaultOpen": true,
+  "collapsible": true,
+  "pages": [
+    "overview",
+    "architecture",
+    "usage",
+    "benchmark",
+    "hardware-requirements",
+    "changelog",
+    "licence",
+    "..."
+  ]
+}

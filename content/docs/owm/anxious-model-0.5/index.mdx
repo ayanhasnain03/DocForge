@@ -1,0 +1,53 @@
+---
+title: Anxious Model 0.5
+description: Open weight model for careful, risk-aware reasoning.
+---
+
+Anxious Model 0.5 is a **7B** open-weight checkpoint tuned for cautious planning, uncertainty estimates, and structured refusal when evidence is thin.
+
+## At a glance
+
+| Property | Value |
+| -------- | ----- |
+| Parameters | 7B dense |
+| Context | 32 768 tokens |
+| Training tokens | ~2.1T pretrain + mid-train |
+| Languages | English primary; code-adjacent |
+| License | Apache 2.0 |
+| First release | 2026-03-12 (`0.5.0`) |
+| Current patch | `0.5.2` (2026-06-01) |
+
+## When to use it
+
+- Incident triage and postmortem drafts
+- Policy / runbook writing with explicit assumptions
+- Research notes that need calibrated confidence
+- Tool-assisted planning where overconfidence is costly
+
+## When not to use it
+
+- Hard latency SLAs under ~80 ms TTFT
+- Multimodal image or audio input
+- High-throughput chat where refusals hurt UX
+
+## Section map
+
+| Page | Contents |
+| ---- | -------- |
+| [Overview](/owm/anxious-model-0.5/overview) | Product fit, highlights, limitations |
+| [Architecture](/owm/anxious-model-0.5/architecture) | Layers, GQA, training sketch |
+| [Usage](/owm/anxious-model-0.5/usage) | llama.cpp, transformers, API |
+| [Benchmark](/owm/anxious-model-0.5/benchmark) | Public + RiskCalib scores |
+| [Hardware](/owm/anxious-model-0.5/hardware-requirements) | VRAM / RAM tables |
+| [Changelog](/owm/anxious-model-0.5/changelog) | Patch history |
+| [Licence](/owm/anxious-model-0.5/licence) | Apache 2.0 summary |
+
+## Quick download
+
+```bash
+# GGUF Q4
+wget https://weights.harc.dev/anxious-model-0.5/anxious-model-0.5-q4_k_m.gguf
+
+# HF hub
+huggingface-cli download harc/anxious-model-0.5 --local-dir ./anxious-0.5
+```

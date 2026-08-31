@@ -1,0 +1,68 @@
+---
+title: Errors & retries
+description: How the Harc SDKs surface failures and when they retry.
+---
+
+## Error taxonomy
+
+| SDK class (TS / Python) | HTTP | Retry? |
+| ----------------------- | ---- | ------ |
+| `AuthenticationError` | 401 | No |
+| `PermissionError` / `ForbiddenError` | 403 | No |
+| `NotFoundError` | 404 | No |
+| `ConflictError` | 409 | No |
+| `ValidationError` | 400 / 422 | No |
+| `RateLimitError` | 429 | Yes |
+| `InternalServerError` | 500 | Yes |
+| `ServiceUnavailableError` | 503 | Yes |
+| `APIConnectionError` | — | Yes |
+| `APITimeoutError` | — | Yes |
+
+## Retry policy (defaults)
+
+- Max attempts: **1 + maxRetries** (default `maxRetries = 3`)
+- Backoff: `min(1000 * 2 ** attempt + jitter, 30000)` ms
+- Honors `Retry-After` when present
+- Retries only idempotent-safe methods **or** requests that include an `idempotencyKey`
+
+## Idempotency
+
+```ts
+await client.completions.create({
+  model: 'anxious-model-0.5',
+  prompt: 'ping',
+  idempotencyKey: 'job-9981-attempt',
+});
+```
+
+Reusing the same key with a different body within 24 hours yields `409 conflict`.
+
+## Inspecting failures
+
+```ts
+import { HarcError } from '@harc/sdk';
+
+catch (e) {
+  if (e instanceof HarcError) {
+    // e.code        -> "rate_limited"
+    // e.status      -> 429
+    // e.requestId   -> "req_..."
+    // e.docsUrl     -> optional help link
+    // e.raw         -> parsed JSON body
+  }
+}
+```
+
+## Disabling retries
+
+```ts
+const client = new Harc({ maxRetries: 0 });
+```
+
+```python
+client = Harc(max_retries=0)
+```
+
+## Logging
+
+Set `HARC_LOG=debug` (Python) or `DEBUG=harc:*` (Node) to log method, path, status, latency, and `requestId` — never the full prompt by default. Opt in with `HARC_LOG_BODIES=1` only in non-production environments.

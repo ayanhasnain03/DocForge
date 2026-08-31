@@ -1,0 +1,14 @@
+{
+  "title": "Research",
+  "description": "Papers, evals, and experimental notes",
+  "icon": "FlaskConical",
+  "root": true,
+  "defaultOpen": false,
+  "collapsible": true,
+  "pages": [
+    "papers",
+    "evals",
+    "methods",
+    "..."
+  ]
+}

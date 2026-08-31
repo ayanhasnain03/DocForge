@@ -1,0 +1,7 @@
+{
+  "title": "License",
+  "description": "Licence terms",
+  "icon": "FileText",
+  "root": true,
+  "pages": ["..."]
+}

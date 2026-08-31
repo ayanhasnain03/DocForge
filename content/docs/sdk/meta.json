@@ -1,0 +1,16 @@
+{
+  "title": "SDK",
+  "description": "Client libraries and tooling",
+  "icon": "Package",
+  "root": true,
+  "defaultOpen": true,
+  "collapsible": true,
+  "pages": [
+    "install",
+    "quickstart",
+    "typescript",
+    "python",
+    "errors",
+    "..."
+  ]
+}

@@ -1,0 +1,49 @@
+---
+title: Papers
+description: Published and preprint papers from the Harc research group.
+---
+
+## 2026
+
+| Title | Venue | Links | Abstract (short) |
+| ----- | ----- | ----- | ---------------- |
+| Calibrated Refusals for Open Weights | arXiv preprint | PDF · code | Training recipes that raise refusal precision without collapsing helpfulness on planning tasks. |
+| Uncertainty Tags as First-Class Outputs | arXiv preprint | PDF | Supervising `confidence: low|medium|high` tags with Brier objectives. |
+| RiskCalib: A Brier-style Suite for Planning Models | Tech report | PDF · data | 500 scenarios, human preference pairs, and scoring scripts. |
+
+## 2025
+
+| Title | Venue | Links | Abstract (short) |
+| ----- | ----- | ----- | ---------------- |
+| GQA Tradeoffs at 7B Scale | Workshop note | PDF | KV-cache savings vs quality on long-context mid-training. |
+| Quantization Without Collapsing Calibration | Workshop note | PDF | Q4/Q5 impact on RiskCalib and overconfidence rate. |
+| Document-Aware Packing for 32k Mid-Train | Internal → public note | PDF | Masking strategies that reduce cross-doc attention bleed. |
+| Preference Data for Cautious Planners | Tech report | PDF | Taxonomy of overconfident vs calibrated responses. |
+
+## Citation (BibTeX examples)
+
+```bibtex
+@article{harc2026calibrated,
+  title   = {Calibrated Refusals for Open Weights},
+  author  = {Harc Research},
+  year    = {2026},
+  journal = {arXiv preprint}
+}
+
+@techreport{harc2025riskcalib,
+  title       = {RiskCalib: A Brier-style Suite for Planning Models},
+  author      = {Harc Research},
+  year        = {2025},
+  institution = {Harc}
+}
+```
+
+## Datasets attached to public papers
+
+| Dataset | Paper | Access |
+| ------- | ----- | ------ |
+| RiskCalib-500 | RiskCalib tech report | Request via `research@harc.dev` |
+| CautiousPrefs-40k (subset) | Calibrated Refusals | Research licence, gated |
+| NeedleNoise-32k | Long-context notes | Public CSV on release page |
+
+Contact `research@harc.dev` for datasets attached to public papers. Include affiliation and intended use.
