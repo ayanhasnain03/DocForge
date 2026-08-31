@@ -20,6 +20,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/components/admin/toast';
 import { readApiError } from '@/lib/admin/api-client';
+import { savedMessage } from '@/lib/admin/save-messages';
+import type { ContentSource } from '@/lib/admin/content-types';
 import { validateMetaPayload } from '@/lib/admin/validate';
 
 type NavEditorProps = {
@@ -143,7 +145,8 @@ export function NavEditor({ path, onSaved }: NavEditorProps) {
       showError(message);
       return;
     }
-    showSuccess('Navigation saved');
+    const result = (await response.json()) as { source?: ContentSource };
+    showSuccess(savedMessage(result.source, 'Navigation saved'));
     onSaved();
   }
 

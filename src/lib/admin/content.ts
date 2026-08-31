@@ -1,31 +1,31 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import matter from 'gray-matter';
+import type {
+  ContentNode,
+  DocFile,
+  DocFrontmatter,
+  MetaFile,
+} from '@/lib/admin/content-types';
+import {
+  normalizeRelativePath,
+  parseDoc,
+  parseMeta,
+  serializeDoc,
+  serializeMeta,
+} from '@/lib/admin/content-format';
+
+export type {
+  ContentNode,
+  DocFile,
+  DocFrontmatter,
+  MetaFile,
+} from '@/lib/admin/content-types';
+export { slugifyTitle } from '@/lib/admin/content-types';
 
 const CONTENT_ROOT = path.join(process.cwd(), 'content', 'docs');
 
-export type ContentNode =
-  | { type: 'file'; name: string; path: string }
-  | { type: 'folder'; name: string; path: string; children: ContentNode[] };
-
-export type DocFrontmatter = {
-  title: string;
-  description?: string;
-};
-
-export type DocFile = {
-  path: string;
-  frontmatter: DocFrontmatter;
-  body: string;
-};
-
-export type MetaFile = {
-  path: string;
-  data: Record<string, unknown>;
-};
-
 function resolveSafePath(relativePath: string): string {
-  const normalized = path.normalize(relativePath).replace(/^(\.\.(\/|\\|$))+/, '');
+  const normalized = normalizeRelativePath(relativePath);
   const full = path.join(CONTENT_ROOT, normalized);
   if (!full.startsWith(CONTENT_ROOT)) {
     throw new Error('Invalid path');
@@ -64,16 +64,7 @@ export async function readDoc(relativePath: string): Promise<DocFile> {
   }
   const full = resolveSafePath(relativePath);
   const raw = await fs.readFile(full, 'utf8');
-  const { data, content } = matter(raw);
-
-  return {
-    path: relativePath.replace(/\\/g, '/'),
-    frontmatter: {
-      title: String(data.title ?? ''),
-      description: data.description ? String(data.description) : undefined,
-    },
-    body: content.trimStart(),
-  };
+  return parseDoc(relativePath, raw);
 }
 
 export async function writeDoc(
@@ -86,14 +77,7 @@ export async function writeDoc(
   }
   const full = resolveSafePath(relativePath);
   await fs.mkdir(path.dirname(full), { recursive: true });
-
-  const fm: Record<string, string> = { title: frontmatter.title };
-  if (frontmatter.description) {
-    fm.description = frontmatter.description;
-  }
-
-  const file = matter.stringify(`\n${body.trim()}\n`, fm);
-  await fs.writeFile(full, file, 'utf8');
+  await fs.writeFile(full, serializeDoc(frontmatter, body), 'utf8');
 }
 
 export async function deleteDoc(relativePath: string): Promise<void> {
@@ -107,10 +91,7 @@ export async function readMeta(relativePath: string): Promise<MetaFile> {
   }
   const full = resolveSafePath(relativePath);
   const raw = await fs.readFile(full, 'utf8');
-  return {
-    path: relativePath.replace(/\\/g, '/'),
-    data: JSON.parse(raw) as Record<string, unknown>,
-  };
+  return parseMeta(relativePath, raw);
 }
 
 export async function writeMeta(
@@ -119,14 +100,5 @@ export async function writeMeta(
 ): Promise<void> {
   const full = resolveSafePath(relativePath);
   await fs.mkdir(path.dirname(full), { recursive: true });
-  await fs.writeFile(full, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
-}
-
-export function slugifyTitle(title: string): string {
-  return (
-    title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'untitled'
-  );
+  await fs.writeFile(full, serializeMeta(data), 'utf8');
 }

@@ -12,6 +12,8 @@ import { DocEditor } from '@/components/admin/doc-editor';
 import { NavEditor } from '@/components/admin/nav-editor';
 import { useToast } from '@/components/admin/toast';
 import { readApiError } from '@/lib/admin/api-client';
+import { savedMessage } from '@/lib/admin/save-messages';
+import type { ContentSource } from '@/lib/admin/content-types';
 
 type Tab = 'content' | 'navigation';
 
@@ -70,11 +72,16 @@ export function AdminShell() {
       return;
     }
 
-    const data = (await response.json()) as { path: string };
+    const data = (await response.json()) as { path: string; source?: ContentSource };
     await loadTree();
     setSelectedPath(data.path);
     setTab('content');
-    showSuccess(kind === 'folder' ? 'Folder created' : 'Page created');
+    showSuccess(
+      savedMessage(
+        data.source,
+        kind === 'folder' ? 'Folder created' : 'Page created',
+      ),
+    );
   }
 
   const isMeta = selectedPath?.endsWith('meta.json') ?? false;
@@ -158,7 +165,7 @@ export function AdminShell() {
                 <DocEditor
                   key={selectedPath}
                   path={selectedPath}
-                  onSaved={() => showSuccess('Saved')}
+                  onSaved={() => {}}
                   onDeleted={async () => {
                     setSelectedPath(null);
                     await loadTree();
@@ -168,7 +175,7 @@ export function AdminShell() {
                 <NavEditor
                   key={selectedPath}
                   path={selectedPath}
-                  onSaved={() => showSuccess('Navigation saved')}
+                  onSaved={() => {}}
                 />
               ) : (
                 <div className="admin-empty">
@@ -179,7 +186,7 @@ export function AdminShell() {
           </>
         ) : (
           <div className="admin-nav-full">
-            <NavEditor path="meta.json" onSaved={() => showSuccess('Root navigation saved')} />
+            <NavEditor path="meta.json" onSaved={() => {}} />
           </div>
         )}
       </div>

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/components/admin/toast';
 import { NotionEditor } from '@/components/admin/notion-editor/notion-editor';
 import { readApiError } from '@/lib/admin/api-client';
+import { savedMessage } from '@/lib/admin/save-messages';
+import type { ContentSource } from '@/lib/admin/content-types';
 import { validateDocPayload } from '@/lib/admin/validate';
 
 type DocEditorProps = {
@@ -98,7 +100,8 @@ export function DocEditor({ path, onSaved, onDeleted }: DocEditorProps) {
       showError(message);
       return;
     }
-    showSuccess('Page saved');
+    const data = (await response.json()) as { source?: ContentSource };
+    showSuccess(savedMessage(data.source, 'Page saved'));
     onSaved();
   }
 
@@ -114,7 +117,8 @@ export function DocEditor({ path, onSaved, onDeleted }: DocEditorProps) {
       showError(message);
       return;
     }
-    showSuccess('Page deleted');
+    const data = (await response.json()) as { source?: ContentSource };
+    showSuccess(savedMessage(data.source, 'Page deleted'));
     onDeleted();
   }
 

@@ -6,7 +6,8 @@ import {
   readMeta,
   writeDoc,
   writeMeta,
-} from '@/lib/admin/content';
+  getContentSource,
+} from '@/lib/admin/content-store';
 import { ValidationError, assertDocPayload, assertMetaPayload } from '@/lib/admin/validate';
 
 type RouteContext = { params: Promise<{ path: string[] }> };
@@ -62,7 +63,7 @@ export async function PUT(request: Request, context: RouteContext) {
       }
       assertMetaPayload(data);
       await writeMeta(relativePath, data);
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({ ok: true, source: getContentSource() });
     }
 
     const docPayload = payload as {
@@ -84,7 +85,7 @@ export async function PUT(request: Request, context: RouteContext) {
       },
       body,
     );
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, source: getContentSource() });
   } catch (error) {
     if (error instanceof ValidationError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -105,7 +106,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
       return NextResponse.json({ error: 'Only MDX files can be deleted' }, { status: 400 });
     }
     await deleteDoc(relativePath);
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, source: getContentSource() });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Delete failed';
     return NextResponse.json({ error: message }, { status: 400 });

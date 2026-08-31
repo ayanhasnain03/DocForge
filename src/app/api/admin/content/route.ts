@@ -5,7 +5,8 @@ import {
   slugifyTitle,
   writeDoc,
   writeMeta,
-} from '@/lib/admin/content';
+  getContentSource,
+} from '@/lib/admin/content-store';
 import { ValidationError, assertCreatePayload } from '@/lib/admin/validate';
 
 async function requireAuth() {
@@ -20,7 +21,7 @@ export async function GET() {
   if (denied) return denied;
 
   const tree = await listContentTree();
-  return NextResponse.json({ tree });
+  return NextResponse.json({ tree, source: getContentSource() });
 }
 
 export async function POST(request: Request) {
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
         pages: ['...'],
       };
       await writeMeta(metaPath, data);
-      return NextResponse.json({ path: metaPath });
+      return NextResponse.json({ path: metaPath, source: getContentSource() });
     }
 
     if (body.kind === 'folder') {
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
         `## ${title}\n\nStart writing here.`,
       );
 
-      return NextResponse.json({ path: `${base}/index.mdx` });
+      return NextResponse.json({ path: `${base}/index.mdx`, source: getContentSource() });
     }
 
     const slug = slugifyTitle(title);
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
       `## Overview\n\nStart writing here.`,
     );
 
-    return NextResponse.json({ path: docPath });
+    return NextResponse.json({ path: docPath, source: getContentSource() });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Could not create item';
     return NextResponse.json({ error: message }, { status: 400 });
