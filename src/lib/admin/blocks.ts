@@ -1,3 +1,5 @@
+import { gitConfig } from '@/lib/shared';
+
 export type FileTreeItem =
   | { kind: 'file'; name: string }
   | { kind: 'folder'; name: string; defaultOpen?: boolean; children: FileTreeItem[] };
@@ -92,7 +94,7 @@ export function createBlock(type: ContentBlock['type']): ContentBlock {
         ],
       };
     case 'github':
-      return { id, type, owner: 'fuma-nama', repo: 'fumadocs' };
+      return { id, type, owner: gitConfig.user, repo: gitConfig.repo };
   }
 }
 

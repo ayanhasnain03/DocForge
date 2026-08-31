@@ -6,11 +6,27 @@ export const docsImageRoute = '/og';
 
 export const docsContentRoute = '/llms.mdx';
 
-export const gitConfig = {
-  user: 'fuma-nama',
-  repo: 'fumadocs',
-  branch: 'main',
-};
+function resolveGitConfig() {
+  const repoFull = process.env.GITHUB_REPO?.trim();
+  if (repoFull?.includes('/')) {
+    const [user, repo] = repoFull.split('/');
+    if (user && repo) {
+      return {
+        user,
+        repo,
+        branch: process.env.GITHUB_BRANCH?.trim() || 'main',
+      };
+    }
+  }
+
+  return {
+    user: 'fuma-nama',
+    repo: 'fumadocs',
+    branch: 'main',
+  };
+}
+
+export const gitConfig = resolveGitConfig();
 
 export const reservedRootPrefixes = [
   'admin',
